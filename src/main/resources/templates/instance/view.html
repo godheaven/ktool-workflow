@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: mainLayout(~{::content})}">
+<head>
+    <title>Instance Details</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <div class="mb-8">
+            <nav class="flex mb-4 text-sm text-gray-500" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2">
+                    <li><a th:href="@{/workflows}" class="hover:text-indigo-600">Workflows</a></li>
+                    <li><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path></svg></li>
+                    <li class="font-medium text-gray-900" th:text="'Instance #' + ${instance.id}">Instance</li>
+                </ol>
+            </nav>
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900" th:text="${instance.version.definition.name}">Workflow Name</h1>
+                    <p class="text-gray-500 mt-1">Created on <span th:text="${#temporals.format(instance.createdAt, 'MMM d, yyyy HH:mm')}">Date</span></p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-100 text-indigo-700" th:text="${instance.currentState.name}">Current State</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider" 
+                          th:classappend="${instance.status == 'ACTIVE' ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-700'}"
+                          th:text="${instance.status}">STATUS</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Dynamic Form & Actions -->
+            <div class="lg:col-span-2 space-y-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                        <h3 class="font-bold text-gray-900">Current Task / Action</h3>
+                    </div>
+                    <div class="p-6">
+                        <form th:action="@{/instances/{id}/transition(id=${instance.id})}" method="post" id="workflowForm">
+                            <!-- Render Dynamic Fields -->
+                            <div th:if="${instance.version.form != null}" class="space-y-6 mb-8">
+                                <div th:each="field : ${instance.version.form.fields}">
+                                    <label th:for="${field.name}" class="block text-sm font-semibold text-gray-700 mb-2" th:text="${field.label}">Label</label>
+                                    
+                                    <!-- Text Input -->
+                                    <input th:if="${field.fieldType == 'TEXT'}" type="text" th:id="${field.name}" th:name="${field.name}" 
+                                           th:required="${field.required}" th:value="${dataMap.get(field.name)}"
+                                           class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                    
+                                    <!-- Number Input -->
+                                    <input th:if="${field.fieldType == 'NUMBER'}" type="number" step="any" th:id="${field.name}" th:name="${field.name}" 
+                                           th:required="${field.required}" th:value="${dataMap.get(field.name)}"
+                                           class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                    
+                                    <!-- Date Input -->
+                                    <input th:if="${field.fieldType == 'DATE'}" type="date" th:id="${field.name}" th:name="${field.name}" 
+                                           th:required="${field.required}" th:value="${dataMap.get(field.name)}"
+                                           class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all">
+                                </div>
+                            </div>
+
+                            <div class="mb-8">
+                                <label for="comment" class="block text-sm font-semibold text-gray-700 mb-2">Decision Comment</label>
+                                <textarea id="comment" name="comment" rows="3"
+                                          class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                          placeholder="Explain your action..."></textarea>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex flex-wrap gap-3 pt-6 border-t border-gray-100">
+                                <button th:each="trans : ${transitions}" type="submit" name="transitionId" th:value="${trans.id}"
+                                        class="px-6 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
+                                        th:classappend="${trans.name.toLowerCase().contains('reject') ? 'bg-red-500 hover:bg-red-600 text-white shadow-red-100' : (trans.name.toLowerCase().contains('approve') ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-100' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-100')}"
+                                        th:text="${trans.name}">
+                                    Transition Name
+                                </button>
+                                <div th:if="${#lists.isEmpty(transitions)}" class="text-gray-400 italic py-2">
+                                    No actions available in this state.
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Timeline & Audit -->
+            <div class="space-y-8">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        History & Audit
+                    </h3>
+                    
+                    <div class="space-y-6">
+                        <div th:each="log : ${auditLogs}" class="relative pl-6 pb-6 last:pb-0 border-l border-gray-100 last:border-l-0">
+                            <div class="absolute -left-[5px] top-1.5 w-2 h-2 rounded-full bg-indigo-500"></div>
+                            <div class="text-xs text-gray-400 mb-1" th:text="${#temporals.format(log.createdAt, 'MMM d, HH:mm')}">Date</div>
+                            <div class="text-sm font-bold text-gray-800" th:text="${log.action}">Action</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                By <span class="font-medium text-gray-700" th:text="${log.user.fullName}">User</span>
+                            </div>
+                            <div th:if="${log.comment != null && !log.comment.isEmpty()}" class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 italic">
+                                "<span th:text="${log.comment}">Comment</span>"
+                            </div>
+                            <div th:if="${log.fromState != null}" class="mt-2 text-[10px] text-gray-400">
+                                <span th:text="${log.fromState.name}">From</span> &rarr; <span th:text="${log.toState.name}">To</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

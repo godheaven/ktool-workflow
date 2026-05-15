@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: mainLayout(~{::content})}">
+<head>
+    <title>Workflows</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <!-- Header -->
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Workflow Manager</h1>
+                <p class="text-gray-500 mt-1">Efficiently organize, manage, and monitor all your business workflows from a single, centralized dashboard.</p>
+            </div>
+            <div class="flex space-x-3">
+                <button type="button" class="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all shadow-sm flex items-center"
+                    th:data-total-matching="${workflowPage.totalElements}"
+                    th:data-current-page-count="${workflowPage.numberOfElements}"
+                    onclick="openBulkChangeModal(this)">
+                    <i class="bi bi-pencil-square mr-2"></i> Bulk Changes
+                </button>
+                <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    New Workflow
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <form th:action="@{/workflows}" method="get" id="filterForm">
+            <input type="hidden" name="size" th:value="${pageSize}">
+            <input type="hidden" name="sort" th:value="${sortField} + ',' + ${sortDir}">
+            <div class="filter-bar flex flex-wrap gap-4 items-center bg-white p-4 rounded-t-xl border-x border-t border-gray-200">
+                <div class="flex items-center space-x-4 flex-grow">
+                    <!-- Search -->
+                    <div class="relative w-64">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </span>
+                        <input type="text" name="search" th:value="${filterSearch}" id="tableSearch" class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all" placeholder="Search workflows...">
+                    </div>
+
+                    <!-- Complexity Filter -->
+                    <div class="w-40">
+                        <select name="complexity" id="filterComplexity" class="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <option value="">All Complexities</option>
+                            <option value="Low" th:selected="${filterComplexity == 'Low'}">Low</option>
+                            <option value="Medium" th:selected="${filterComplexity == 'Medium'}">Medium</option>
+                            <option value="High" th:selected="${filterComplexity == 'High'}">High</option>
+                            <option value="Critical" th:selected="${filterComplexity == 'Critical'}">Critical</option>
+                        </select>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="w-40">
+                        <select name="enabled" id="filterStatus" class="block w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <option value="">All Statuses</option>
+                            <option value="true" th:selected="${filterEnabled == true}">Enabled</option>
+                            <option value="false" th:selected="${filterEnabled == false}">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center">
+                        <i class="bi bi-filter mr-2"></i> Apply
+                    </button>
+                    <a th:href="@{/workflows}" class="flex items-center px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-100 transition-all">
+                        <svg class="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        Reset
+                    </a>
+                </div>
+            </div>
+        </form>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-b-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table id="workflowTable" class="w-full text-left custom-table">
+                <thead>
+                    <tr>
+
+                        <th class="sortable cursor-pointer" data-field="id" onclick="handleSort(this)">
+                            ID 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'id' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'id' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'id' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'id'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th class="sortable cursor-pointer" data-field="name" onclick="handleSort(this)">
+                            Workflow Model 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'name' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'name' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'name' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'name'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th class="sortable cursor-pointer" data-field="ownerName" onclick="handleSort(this)">
+                            Owner 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'ownerName' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'ownerName' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'ownerName' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'ownerName'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th class="sortable cursor-pointer" data-field="lastUpdated" onclick="handleSort(this)">
+                            Updated 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'lastUpdated' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'lastUpdated' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'lastUpdated' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'lastUpdated'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th class="sortable cursor-pointer" data-field="versionLabel" onclick="handleSort(this)">
+                            Version 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'versionLabel' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'versionLabel' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'versionLabel' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'versionLabel'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th class="sortable cursor-pointer" data-field="complexity" onclick="handleSort(this)">
+                            Complexity 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'complexity' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'complexity' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'complexity' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'complexity'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th class="sortable cursor-pointer" data-field="rating" onclick="handleSort(this)">
+                            Rating 
+                            <svg class="w-3 h-3 inline-block ml-1" th:classappend="${sortField == 'rating' ? 'text-indigo-600 opacity-100' : 'opacity-30'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path th:if="${sortField == 'rating' && sortDir == 'desc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                <path th:if="${sortField == 'rating' && sortDir == 'asc'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+                                <path th:if="${sortField != 'rating'}" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                            </svg>
+                        </th>
+                        <th>Enabled</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr th:each="wf : ${workflows}" class="hover:bg-gray-50 transition-colors group">
+
+                        <td class="whitespace-nowrap">
+                            <a th:href="@{/workflows/{id}(id=${wf.id})}" 
+                               class="text-indigo-600 font-bold hover:underline id-trigger" 
+                               th:data-id="'WK' + ${123450 + wf.id}"
+                               th:data-name="${wf.name}"
+                               th:text="'WK' + ${123450 + wf.id}">WK123450</a>
+                        </td>
+                        <td>
+                            <span class="font-semibold text-gray-800" th:text="${wf.name}">Workflow Name</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center">
+                                <img th:src="${wf.ownerAvatarUrl != null ? wf.ownerAvatarUrl : 'https://ui-avatars.com/api/?name=' + wf.ownerName + '&background=random'}" class="w-7 h-7 rounded-full border border-gray-200 mr-2 shadow-xs">
+                                <span class="text-xs font-medium text-gray-700" th:text="${wf.ownerName}">Owner Name</span>
+                            </div>
+                        </td>
+                        <td class="text-xs text-gray-500" th:text="${wf.lastUpdated}">09/13/2015</td>
+                        <td class="text-xs text-gray-500" th:text="${wf.versionLabel}">v 1.0</td>
+                        <td>
+                            <span class="text-[10px] font-bold uppercase tracking-wider complexity-label" 
+                                  th:classappend="${wf.complexity == 'Low' ? 'text-indigo-500' : (wf.complexity == 'Medium' ? 'text-amber-500' : 'text-red-500')}"
+                                  th:text="${wf.complexity}">Low</span>
+                        </td>
+                        <td>
+                            <div class="star-rating">
+                                <svg th:each="i : ${#numbers.sequence(1, 5)}" 
+                                     class="star" 
+                                     th:classappend="${i > wf.rating ? 'empty' : ''}"
+                                     fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                </svg>
+                            </div>
+                        </td>
+                        <td>
+                            <label class="toggle-switch">
+                                <input type="checkbox" th:checked="${wf.enabled}" class="status-toggle" th:data-status="${wf.enabled ? 'enabled' : 'disabled'}">
+                                <span class="slider"></span>
+                            </label>
+                        </td>
+                        <td class="text-right whitespace-nowrap">
+                            <div class="flex items-center justify-end space-x-1">
+                                <button class="action-btn edit" title="Edit"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                                <button class="action-btn copy clone-trigger" th:data-id="'WK' + ${123450 + wf.id}" th:data-name="${wf.name}" title="Clone"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg></button>
+                                <button class="action-btn delete delete-trigger" th:data-id="'WK' + ${123450 + wf.id}" th:data-name="${wf.name}" title="Delete"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="mt-4 flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div class="text-xs text-gray-500">
+                Showing <span class="font-bold text-gray-900" th:text="${workflowPage.number * pageSize + 1}">1</span> 
+                to <span class="font-bold text-gray-900" th:text="${(workflowPage.number + 1) * pageSize > workflowPage.totalElements ? workflowPage.totalElements : (workflowPage.number + 1) * pageSize}">10</span> 
+                of <span class="font-bold text-gray-900" th:text="${workflowPage.totalElements}">200</span> workflows
+            </div>
+            <div class="flex items-center space-x-2">
+                <a th:if="${workflowPage.hasPrevious()}" 
+                   th:href="@{/workflows(page=${currentPage - 1}, size=${pageSize}, sort=${sortField} + ',' + ${sortDir}, search=${filterSearch}, complexity=${filterComplexity}, enabled=${filterEnabled})}" 
+                   class="px-3 py-1 border border-gray-200 rounded-md text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all flex items-center">
+                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    Prev
+                </a>
+                <div class="flex space-x-1">
+                    <a th:each="i : ${#numbers.sequence(0, workflowPage.totalPages - 1)}" 
+                       th:if="${i >= currentPage - 2 && i <= currentPage + 2}"
+                       th:href="@{/workflows(page=${i}, size=${pageSize}, sort=${sortField} + ',' + ${sortDir}, search=${filterSearch}, complexity=${filterComplexity}, enabled=${filterEnabled})}"
+                       th:text="${i + 1}"
+                       class="px-3 py-1 rounded-md text-xs font-bold transition-all"
+                       th:classappend="${i == currentPage ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50 border border-gray-200'}">1</a>
+                </div>
+                <a th:if="${workflowPage.hasNext()}" 
+                   th:href="@{/workflows(page=${currentPage + 1}, size=${pageSize}, sort=${sortField} + ',' + ${sortDir}, search=${filterSearch}, complexity=${filterComplexity}, enabled=${filterEnabled})}" 
+                   class="px-3 py-1 border border-gray-200 rounded-md text-xs font-bold text-gray-600 hover:bg-gray-50 transition-all flex items-center">
+                    Next
+                    <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- MODAL: Confirmation -->
+        <div id="confirmModal" class="modal-overlay">
+            <div class="modal-content">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 id="modalTitle" class="text-lg font-bold text-gray-900">Confirmation</h3>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="flex items-start space-x-4 mb-8">
+                    <div class="p-2 bg-amber-50 rounded-lg">
+                        <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    </div>
+                    <div>
+                        <p id="modalMessage" class="text-sm text-gray-600">Are you sure you want to proceed?</p>
+                        <p id="modalItemInfo" class="text-sm font-bold text-gray-900 mt-1">Workflow: WK123456 - Product Configuration</p>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button onclick="closeModal()" class="flex items-center px-4 py-2 text-sm font-bold text-gray-600 hover:text-red-500 transition-colors">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        No
+                    </button>
+                    <button onclick="closeModal()" class="flex items-center px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 shadow-sm transition-all">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        Yes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: Bulk Change -->
+        <div class="modal fade" id="bulkChangeModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-2xl rounded-2xl overflow-hidden">
+                    <div class="modal-header bg-gray-50 border-b border-gray-100 py-4 px-6">
+                        <h5 class="modal-title font-bold text-gray-900 flex items-center">
+                            <i class="bi bi-pencil-square mr-2 text-indigo-600"></i> Bulk Changes
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-6">
+                        <!-- Selection Scope -->
+                        <div id="bulkAffectingUsers" class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6">
+                            <div class="flex items-center text-indigo-900 font-bold text-xs uppercase tracking-wider mb-3">
+                                <i class="bi bi-info-circle-fill mr-2"></i> Selection Scope
+                            </div>
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <input class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" type="radio" name="bulkScope" id="scopePage" value="page" checked>
+                                    <label class="ml-2 text-sm text-gray-700 cursor-pointer" for="scopePage">
+                                        Current page only (<span id="bulkPageCount" class="font-bold">0</span> workflows)
+                                    </label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input class="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500" type="radio" name="bulkScope" id="scopeAll" value="all">
+                                    <label class="ml-2 text-sm text-gray-900 font-bold cursor-pointer" for="scopeAll">
+                                        All matching results (<span id="bulkTotalCount" class="font-bold">0</span> workflows)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="space-y-6">
+                            <!-- Complexity -->
+                            <div>
+                                <div class="flex items-center mb-2">
+                                    <input class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" type="checkbox" id="chkUpdateComplexity"
+                                        onchange="document.getElementById('bulkComplexitySelect').disabled = !this.checked">
+                                    <label class="ml-2 text-sm font-bold text-gray-900 cursor-pointer" for="chkUpdateComplexity">Change Complexity</label>
+                                </div>
+                                <select id="bulkComplexitySelect" class="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:bg-gray-50 disabled:text-gray-400" disabled>
+                                    <option value="Low">Low</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="High">High</option>
+                                    <option value="Critical">Critical</option>
+                                </select>
+                            </div>
+
+                            <!-- Status (Enabled) -->
+                            <div>
+                                <div class="flex items-center mb-2">
+                                    <input class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" type="checkbox" id="chkUpdateStatus"
+                                        onchange="document.getElementById('bulkStatusSelect').disabled = !this.checked">
+                                    <label class="ml-2 text-sm font-bold text-gray-900 cursor-pointer" for="chkUpdateStatus">Change Enabled Status</label>
+                                </div>
+                                <select id="bulkStatusSelect" class="w-full bg-white border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all disabled:bg-gray-50 disabled:text-gray-400" disabled>
+                                    <option value="true">Enabled</option>
+                                    <option value="false">Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-gray-50 border-t border-gray-100 p-4 flex justify-end space-x-3">
+                        <button type="button" class="px-4 py-2 text-sm font-bold text-gray-600 hover:text-gray-800 transition-colors" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-sm transition-all flex items-center" onclick="applyBulkChanges()">
+                            <i class="bi bi-check-lg mr-2"></i> Apply Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POPOVER: ID Info -->
+        <div id="idPopover" class="id-popover shadow-xl">
+            <h4 id="popoverTitle" class="font-bold text-gray-900 mb-2">Information - WK123450</h4>
+            <p class="text-[11px] text-gray-500 leading-relaxed mb-4">
+                Workflow is the series of activities that are necessary to complete a task. Each step in a workflow has a specific step before it and a specific step after it.
+            </p>
+            <div class="grid grid-cols-2 gap-y-3 gap-x-4 border-t border-gray-100 pt-4">
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Created</p>
+                    <p class="text-[11px] font-bold text-indigo-600">12 Dec 2022</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Approvers</p>
+                    <p class="text-[11px] font-bold text-indigo-600">5 users</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Forms</p>
+                    <p class="text-[11px] font-bold text-indigo-600">1 items</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase tracking-wider">Requests</p>
+                    <p class="text-[11px] font-bold text-indigo-600">55 items</p>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            /*<![CDATA[*/
+            const currentPage = /*[[${currentPage}]]*/ 0;
+            const pageSize = /*[[${pageSize}]]*/ 10;
+            const sortField = /*[[${sortField}]]*/ 'id';
+            const sortDir = /*[[${sortDir}]]*/ 'asc';
+            const filterSearch = /*[[${filterSearch}]]*/ '';
+            const filterComplexity = /*[[${filterComplexity}]]*/ '';
+            const filterEnabled = /*[[${filterEnabled}]]*/ null;
+
+            function handleSort(el) {
+                const field = el.getAttribute('data-field');
+                const newDir = (field === sortField && sortDir === 'asc') ? 'desc' : 'asc';
+                let url = `/workflows?page=0&size=${pageSize}&sort=${field},${newDir}`;
+                if (filterSearch) url += `&search=${encodeURIComponent(filterSearch)}`;
+                if (filterComplexity) url += `&complexity=${encodeURIComponent(filterComplexity)}`;
+                if (filterEnabled !== null) url += `&enabled=${filterEnabled}`;
+                window.location.href = url;
+            }
+
+            // MODAL LOGIC
+            function openModal(type, id, name) {
+                const modal = document.getElementById('confirmModal');
+                const title = document.getElementById('modalTitle');
+                const message = document.getElementById('modalMessage');
+                const info = document.getElementById('modalItemInfo');
+                
+                if (type === 'delete') {
+                    title.innerText = 'Delete Confirmation';
+                    message.innerText = 'Are you sure you want to delete this item?';
+                } else {
+                    title.innerText = 'Clone Confirmation';
+                    message.innerText = 'Are you sure you want to clone this item?';
+                }
+                
+                info.innerText = `Workflow: ${id} - ${name}`;
+                modal.classList.add('active');
+            }
+
+            function closeModal() {
+                document.getElementById('confirmModal').classList.remove('active');
+            }
+
+            document.querySelectorAll('.delete-trigger').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    openModal('delete', btn.dataset.id, btn.dataset.name);
+                });
+            });
+
+            document.querySelectorAll('.clone-trigger').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    openModal('clone', btn.dataset.id, btn.dataset.name);
+                });
+            });
+
+            // POPOVER LOGIC
+            const popover = document.getElementById('idPopover');
+            document.querySelectorAll('.id-trigger').forEach(trigger => {
+                trigger.addEventListener('mouseenter', (e) => {
+                    const rect = trigger.getBoundingClientRect();
+                    document.getElementById('popoverTitle').innerText = `Information - ${trigger.dataset.id}`;
+                    popover.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                    popover.style.left = `${rect.left + window.scrollX}px`;
+                    popover.classList.add('active');
+                });
+                trigger.addEventListener('mouseleave', () => popover.classList.remove('active'));
+            });
+
+            // Server-side Filtering Logic
+            function applyFilters() {
+                document.getElementById('filterForm').submit();
+            }
+
+            // Optional: Auto-submit on change for selects
+            document.getElementById('filterComplexity').addEventListener('change', applyFilters);
+            document.getElementById('filterStatus').addEventListener('change', applyFilters);
+            
+            // For search, we might want to wait for Enter or just let the button handle it
+            document.getElementById('tableSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyFilters();
+                }
+            });
+
+            // ESC Key to close all modals
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal(); // Custom confirm modal
+                    const bulkModalEl = document.getElementById('bulkChangeModal');
+                    const bsBulkModal = bootstrap.Modal.getInstance(bulkModalEl);
+                    if (bsBulkModal) bsBulkModal.hide();
+                }
+            });
+
+            // BULK CHANGE LOGIC
+            function openBulkChangeModal(btn) {
+                const totalMatching = btn.dataset.totalMatching;
+                const pageCount = btn.dataset.currentPageCount;
+                
+                document.getElementById('bulkTotalCount').textContent = totalMatching;
+                document.getElementById('bulkPageCount').textContent = pageCount;
+                
+                document.getElementById('chkUpdateComplexity').checked = false;
+                document.getElementById('chkUpdateStatus').checked = false;
+                
+                document.getElementById('bulkComplexitySelect').disabled = true;
+                document.getElementById('bulkStatusSelect').disabled = true;
+                
+                const modal = new bootstrap.Modal(document.getElementById('bulkChangeModal'));
+                modal.show();
+            }
+
+            function applyBulkChanges() {
+                const affectAll = document.getElementById('scopeAll').checked;
+                const updateComplexity = document.getElementById('chkUpdateComplexity').checked;
+                const updateStatus = document.getElementById('chkUpdateStatus').checked;
+                
+                if (!updateComplexity && !updateStatus) {
+                    alert('Please select at least one change to apply.');
+                    return;
+                }
+
+                const payload = {
+                    affectAll: affectAll,
+                    complexity: updateComplexity ? document.getElementById('bulkComplexitySelect').value : null,
+                    enabled: updateStatus ? document.getElementById('bulkStatusSelect').value === 'true' : null
+                };
+
+                console.log('Applying bulk changes:', payload);
+                // In a real app, this would be an AJAX call. For now, we simulate success.
+                alert(`Bulk changes applied to ${affectAll ? 'all' : 'current page'} workflows!`);
+                bootstrap.Modal.getInstance(document.getElementById('bulkChangeModal')).hide();
+                location.reload();
+            }
+        </script>
+    </div>
+</body>
+</html>

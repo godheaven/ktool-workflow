@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: mainLayout(~{::content})}">
+<head>
+    <title>Dashboard</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Stat Cards -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-indigo-50 text-indigo-600 mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Pending Tasks</p>
+                        <h3 class="text-2xl font-bold text-gray-900" th:text="${pendingTasksCount}">12</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-emerald-50 text-emerald-600 mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Active Instances</p>
+                        <h3 class="text-2xl font-bold text-gray-900" th:text="${activeInstancesCount}">45</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-xl bg-amber-50 text-amber-600 mr-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Workflow Models</p>
+                        <h3 class="text-2xl font-bold text-gray-900" th:text="${workflowModelsCount}">8</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 class="text-lg font-semibold text-gray-800">Recent Tasks</h3>
+                <a th:href="@{/tasks}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">View all</a>
+            </div>
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <tr>
+                        <th class="px-6 py-3">Workflow</th>
+                        <th class="px-6 py-3">Task / State</th>
+                        <th class="px-6 py-3">Created</th>
+                        <th class="px-6 py-3">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr th:each="task : ${recentTasks}" class="hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <span class="font-medium text-gray-900" th:text="${task.instance.version.definition.name}">Workflow Name</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" th:text="${task.state.name}">State</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-500" th:text="${#temporals.format(task.createdAt, 'MMM d, HH:mm')}">Date</td>
+                        <td class="px-6 py-4">
+                            <a th:href="@{/tasks/{id}(id=${task.id})}" class="text-indigo-600 hover:text-indigo-900 font-medium text-sm">Handle</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(recentTasks)}">
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+                            No pending tasks. Everything looks clear!
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

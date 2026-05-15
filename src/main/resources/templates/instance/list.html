@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: mainLayout(~{::content})}">
+<head>
+    <title>Workflow History</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <!-- Header -->
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-gray-900">Workflow History</h1>
+            <p class="text-sm text-gray-500 mt-1">Track all running and completed business processes.</p>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="flex space-x-2">
+                <button class="flex items-center px-3 py-1.5 border border-gray-200 rounded-md text-xs font-bold text-gray-700 hover:bg-gray-50">
+                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Filters
+                </button>
+            </div>
+            <div class="relative w-64">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </span>
+                <input type="text" class="block w-full pl-10 pr-3 py-1.5 border border-gray-200 rounded-md text-sm placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500" placeholder="Search history">
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <table class="w-full text-left custom-table">
+                <thead>
+                    <tr>
+                        <th>ID <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg></th>
+                        <th>Workflow Model <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg></th>
+                        <th>Current State <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg></th>
+                        <th>Status <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg></th>
+                        <th>Creator <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg></th>
+                        <th>Created <svg class="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path></svg></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr th:each="inst : ${instances}" class="hover:bg-gray-50 transition-colors">
+                        <td class="font-bold text-gray-900" th:text="'#' + ${inst.id}">#123</td>
+                        <td>
+                            <span class="font-medium text-gray-700" th:text="${inst.version.definition.name}">Workflow Name</span>
+                        </td>
+                        <td class="text-sm text-gray-600" th:text="${inst.currentState.name}">State</td>
+                        <td>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
+                                  th:classappend="${inst.status == 'ACTIVE' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}"
+                                  th:text="${inst.status}">ACTIVE</span>
+                        </td>
+                        <td class="text-sm text-gray-600" th:text="${inst.creator.fullName}">User</td>
+                        <td class="text-xs text-gray-500" th:text="${#temporals.format(inst.createdAt, 'MMM d, HH:mm')}">Date</td>
+                        <td class="text-right">
+                            <a th:href="@{/instances/{id}(id=${inst.id})}" class="text-indigo-600 hover:text-indigo-800 font-bold text-xs uppercase tracking-wider">View Details</a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(instances)}">
+                        <td colspan="7" class="py-12 text-center text-gray-500 text-sm">
+                            No instances found.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

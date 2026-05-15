@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout :: mainLayout(~{::content})}">
+<head>
+    <title>Workflow Details</title>
+</head>
+<body>
+    <div th:fragment="content">
+        <!-- Breadcrumbs & Title -->
+        <div class="mb-8">
+            <nav class="flex mb-4 text-xs text-gray-500" aria-label="Breadcrumb">
+                <ol class="flex items-center space-x-2">
+                    <li><a th:href="@{/workflows}" class="hover:text-indigo-600">Workflow Manager</a></li>
+                    <li><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"></path></svg></li>
+                    <li class="font-medium text-gray-900" th:text="${workflow.name}">Current</li>
+                </ol>
+            </nav>
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900" th:text="${workflow.name}">Workflow Name</h1>
+                    <p class="text-sm text-gray-500 mt-2" th:text="${workflow.description}">Description</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button class="bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-all">
+                        Edit Model
+                    </button>
+                    <form th:if="${activeVersion != null}" th:action="@{/instances/start}" method="post">
+                        <input type="hidden" name="definitionId" th:value="${workflow.id}">
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Start Instance
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <a href="#" class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm">Workflow Structure</a>
+                <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Form Definition</a>
+                <a href="#" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">History</a>
+            </nav>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: States & Transitions -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-lg font-bold text-gray-900 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                            Process Logic (v<span th:text="${activeVersion?.versionNumber}">1</span>)
+                        </h3>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Active</span>
+                    </div>
+                    
+                    <div th:if="${activeVersion == null}" class="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                        <p class="text-gray-400">No active version found.</p>
+                    </div>
+
+                    <div th:if="${activeVersion != null}" class="space-y-4">
+                        <div th:each="state : ${activeVersion.states}" class="relative pl-8 pb-6 last:pb-0 border-l border-gray-200 last:border-l-0">
+                            <!-- State Dot -->
+                            <div class="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm"
+                                 th:classappend="${state.isInitial ? 'bg-indigo-500' : (state.isFinal ? 'bg-emerald-500' : 'bg-slate-400')}"></div>
+                            
+                            <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                                <div class="flex justify-between items-center">
+                                    <h4 class="font-bold text-gray-800" th:text="${state.name}">State Name</h4>
+                                    <code class="text-[10px] text-gray-400 font-mono" th:text="${state.code}">CODE</code>
+                                </div>
+                                
+                                <div class="mt-3 space-y-2">
+                                    <div th:each="trans : ${activeVersion.transitions}" th:if="${trans.fromState.id == state.id}" 
+                                         class="flex items-center text-xs bg-white p-2 rounded-md border border-gray-100 shadow-sm">
+                                        <svg class="w-3 h-3 text-indigo-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                        <span class="font-semibold text-gray-700" th:text="${trans.name}">Transition Name</span>
+                                        <span class="mx-2 text-gray-300">&rarr;</span>
+                                        <span class="text-indigo-600 font-bold" th:text="${trans.toState.name}">Target State</span>
+                                        <span th:if="${trans.ruleExpression != null}" class="ml-auto text-[9px] bg-amber-50 text-amber-700 px-1.5 py-0.5 rounded font-mono" th:title="${trans.ruleExpression}">Conditional</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Details Card -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Workflow Info</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">ID</span>
+                            <span class="font-bold text-gray-900" th:text="'WK' + ${123450 + workflow.id}">WK123450</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Owner</span>
+                            <span class="font-bold text-gray-900" th:text="${workflow.ownerName}">Owner Name</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Updated</span>
+                            <span class="text-gray-700" th:text="${workflow.lastUpdated}">09/13/2015</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Complexity</span>
+                            <span class="font-bold" th:classappend="${workflow.complexity == 'Low' ? 'text-indigo-500' : 'text-amber-500'}" th:text="${workflow.complexity}">Low</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider">Form Definition</h3>
+                    <div th:if="${activeVersion?.form == null}" class="py-4 text-center text-sm text-gray-400 italic">No form associated.</div>
+                    <div th:if="${activeVersion?.form != null}" class="space-y-3">
+                        <div th:each="field : ${activeVersion.form.fields}" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                            <div>
+                                <p class="text-xs font-bold text-gray-700" th:text="${field.label}">Label</p>
+                                <p class="text-[9px] text-gray-400" th:if="${field.required}">* Mandatory</p>
+                            </div>
+                            <span class="text-[9px] bg-white px-1.5 py-0.5 rounded border border-gray-200 text-gray-500 font-mono" th:text="${field.fieldType}">TYPE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
