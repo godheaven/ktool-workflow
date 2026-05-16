@@ -1,49 +1,57 @@
 package cl.kanopus.workflow.web.controller;
 
-import cl.kanopus.workflow.data.entity.WorkflowDefinition;
-import cl.kanopus.workflow.data.entity.WorkflowInstance;
-import cl.kanopus.workflow.data.entity.WorkflowVersion;
-import cl.kanopus.workflow.data.repository.WorkflowVersionRepository;
-import cl.kanopus.workflow.service.WorkflowService;
+import cl.kanopus.workflow.data.entity.WorkflowDefinitionEntity;
+import cl.kanopus.workflow.data.entity.WorkflowVersionEntity;
+import cl.kanopus.workflow.data.repository.WorkflowDefinitionEntityRepository;
+import cl.kanopus.workflow.data.repository.WorkflowVersionEntityRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/workflows")
 @RequiredArgsConstructor
 public class WorkflowController {
 
-    private final WorkflowService workflowService;
-    private final WorkflowVersionRepository versionRepository;
+    private final WorkflowDefinitionEntityRepository definitionRepository;
+    private final WorkflowVersionEntityRepository versionRepository;
 
     @GetMapping
     public String list(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "id,asc") String[] sort,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String complexity,
             @RequestParam(required = false) Boolean enabled,
+            Pageable pageable,
             Model model) {
         
-        org.springframework.data.domain.Sort.Direction direction = sort[1].equalsIgnoreCase("desc") ? 
-                org.springframework.data.domain.Sort.Direction.DESC : org.springframework.data.domain.Sort.Direction.ASC;
+        // Treat empty strings as null for filters
+        String finalSearch = (search != null && search.isEmpty()) ? null : search;
+        String finalComplexity = (complexity != null && complexity.isEmpty()) ? null : complexity;
         
-        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, org.springframework.data.domain.Sort.by(direction, sort[0]));
+        Page<WorkflowDefinitionEntity> workflowPage = definitionRepository.findByFilters(finalSearch, finalComplexity, enabled, pageable);
         
-        org.springframework.data.domain.Page<WorkflowDefinition> workflowPage = workflowService.findAllDefinitions(search, complexity, enabled, pageable);
-        
-        model.addAttribute("pageTitle", "Workflow Models");
+        model.addAttribute("pageTitle", "Workflows");
         model.addAttribute("workflowPage", workflowPage);
         model.addAttribute("workflows", workflowPage.getContent());
-        model.addAttribute("currentPage", page);
-        model.addAttribute("pageSize", size);
-        model.addAttribute("sortField", sort[0]);
-        model.addAttribute("sortDir", sort[1]);
+        
+        // Pagination & Sort state for the UI
+        model.addAttribute("currentPage", pageable.getPageNumber());
+        model.addAttribute("pageSize", pageable.getPageSize());
+        
+        Sort sort = pageable.getSort();
+        if (sort.isSorted()) {
+            Sort.Order order = sort.iterator().next();
+            model.addAttribute("sortField", order.getProperty());
+            model.addAttribute("sortDir", order.getDirection().name().toLowerCase());
+        } else {
+            model.addAttribute("sortField", "id");
+            model.addAttribute("sortDir", "asc");
+        }
         
         // Filter state
         model.addAttribute("filterSearch", search);
@@ -55,13 +63,11 @@ public class WorkflowController {
 
     @GetMapping("/{id}")
     public String view(@PathVariable Long id, Model model) {
-        WorkflowDefinition definition = workflowService.findAllDefinitions().stream()
-                .filter(d -> d.getId().equals(id))
-                .findFirst()
+        WorkflowDefinitionEntity definition = definitionRepository.findById(id)
                 .orElseThrow();
         
-        WorkflowVersion activeVersion = versionRepository.findByDefinitionIdAndActiveTrue(id)
-                .orElse(null);
+        WorkflowVersionEntity activeVersion = versionRepository.findByDefinitionIdAndIsDraftFalse(id)
+                .stream().findFirst().orElse(null);
 
         model.addAttribute("pageTitle", definition.getName());
         model.addAttribute("workflow", definition);

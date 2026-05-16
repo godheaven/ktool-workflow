@@ -1,0 +1,294 @@
+:root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --bg-canvas: #f8fafc;
+    --bg-panel: #ffffff;
+    --border-color: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --node-start: #22c55e;
+    --node-end: #ef4444;
+    --node-task: #3b82f6;
+    --node-approval: #f59e0b;
+    --node-rule: #8b5cf6;
+    --node-automation: #06b6d4;
+    --node-notification: #ec4899;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--text-main);
+}
+
+.designer-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Header */
+.designer-header {
+    height: 64px;
+    background: var(--bg-panel);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 100;
+}
+
+.wf-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.wf-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.wf-badge {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-draft { background: #dcfce7; color: #166534; }
+.badge-published { background: #dbeafe; color: #1e40af; }
+
+.designer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+    background: white;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+/* Main Layout */
+.designer-main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* Sidebar / Toolbox */
+.designer-sidebar {
+    width: 260px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-title {
+    padding: 16px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.toolbox-list {
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.toolbox-item {
+    padding: 12px;
+    background: #f1f5f9;
+    border-radius: 8px;
+    cursor: grab;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.toolbox-item:hover {
+    background: #e2e8f0;
+}
+
+.item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+/* Canvas Area */
+#drawflow {
+    flex: 1;
+    background-color: var(--bg-canvas);
+    background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 20px 20px;
+    position: relative;
+}
+
+/* Properties Panel */
+.designer-properties {
+    width: 340px;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-color);
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.panel-title {
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Drawflow Node Styling */
+.drawflow .drawflow-node {
+    background: white !important;
+    border: 2px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    min-width: 160px !important;
+    padding: 0 !important;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+}
+
+.drawflow .drawflow-node.selected {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2) !important;
+}
+
+.node-header {
+    padding: 8px 12px !important;
+    border-bottom: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-radius: 10px 10px 0 0;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    color: white !important;
+    white-space: nowrap !important;
+}
+
+.node-header svg, .node-header i, .node-header .node-icon {
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    margin-right: 10px !important;
+    display: inline-block !important;
+}
+
+.node-header span {
+    display: inline-block !important;
+    line-height: 16px !important;
+    margin-left: 20px !important;
+}
+
+.node-body {
+    padding: 12px;
+    font-size: 0.875rem;
+}
+
+/* Colors for Node Headers */
+.header-start { background: var(--node-start); }
+.header-end { background: var(--node-end); }
+.header-form { background: var(--node-task); }
+.header-approval { background: var(--node-approval); }
+.header-task { background: var(--node-task); }
+.header-rule { background: var(--node-rule); }
+.header-automation { background: var(--node-automation); }
+.header-notification { background: var(--node-notification); }
+
+/* Form groups in properties */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    outline: none;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+}
+
+/* Field Builder */
+.field-item {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+}
+
+.field-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.field-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.btn-icon {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+}
+
+.btn-icon:hover {
+    color: var(--primary-color);
+}
