@@ -2,6 +2,7 @@ package cl.kanopus.workflow.config;
 
 import cl.kanopus.workflow.data.entity.*;
 import cl.kanopus.workflow.data.repository.*;
+import cl.kanopus.workflow.model.form.FieldType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -164,13 +165,13 @@ public class InitialDataConfig {
                     .version(v1).name("Expense Details").description("Please fill in the expense information.").build());
 
             fieldRepository.save(WorkflowFormField.builder()
-                    .form(form).name("description").label("Description").fieldType("TEXT").required(true).orderIndex(0).build());
+                    .form(form).key("description").label("Description").fieldType(FieldType.TEXT).required(true).orderIndex(0).build());
             
             fieldRepository.save(WorkflowFormField.builder()
-                    .form(form).name("amount").label("Amount").fieldType("NUMBER").required(true).orderIndex(1).build());
+                    .form(form).key("amount").label("Amount").fieldType(FieldType.NUMBER).required(true).orderIndex(1).build());
             
             fieldRepository.save(WorkflowFormField.builder()
-                    .form(form).name("date").label("Expense Date").fieldType("DATE").required(true).orderIndex(2).build());
+                    .form(form).key("date").label("Expense Date").fieldType(FieldType.DATE).required(true).orderIndex(2).build());
         };
     }
 }

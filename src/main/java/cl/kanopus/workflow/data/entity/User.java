@@ -27,8 +27,10 @@ public class User {
     private String fullName;
     private String email;
     private String avatarUrl;
+    @Builder.Default
     private boolean active = true;
 
+    @Builder.Default
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "user_roles",

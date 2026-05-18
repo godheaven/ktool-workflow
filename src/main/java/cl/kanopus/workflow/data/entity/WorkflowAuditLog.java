@@ -38,5 +38,6 @@ public class WorkflowAuditLog {
     @Column(columnDefinition = "TEXT")
     private String comment;
 
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

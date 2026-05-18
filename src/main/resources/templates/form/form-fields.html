@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- Main Field Dispatcher -->
+<div th:fragment="fieldRenderer(field)" 
+     th:id="'field-container-' + ${field.key}"
+     class="form-field-container mb-4"
+     th:classappend="${field.cssClass}"
+     th:data-field-key="${field.key}"
+     th:data-rules="${field.rules != null ? #json.stringify(field.rules) : '{}'}"
+     th:style="${field.hidden ? 'display: none;' : ''}">
+    
+    <label th:if="${field.type.name() != 'CHECKBOX'}" 
+           th:for="${field.key}" 
+           class="form-label fw-bold">
+        <span th:text="${field.label}">Field Label</span>
+        <span th:if="${field.required}" class="text-danger">*</span>
+        <i th:if="${field.icon}" th:class="${field.icon} + ' ms-1'"></i>
+    </label>
+
+    <div class="field-input-wrapper">
+        <!-- TEXT / TEXTAREA -->
+        <th:block th:if="${field.type.name() == 'TEXT'}">
+            <input type="text" 
+                   th:id="${field.key}" 
+                   th:name="${field.key}"
+                   class="form-control"
+                   th:placeholder="${field.placeholder}"
+                   th:required="${field.required}"
+                   th:readonly="${field.readonly}"
+                   th:disabled="${field.disabled}"
+                   th:maxlength="${field.config?.maxLength}"
+                   th:pattern="${field.config?.regex}">
+        </th:block>
+
+        <th:block th:if="${field.type.name() == 'TEXTAREA'}">
+            <textarea th:id="${field.key}" 
+                      th:name="${field.key}"
+                      class="form-control"
+                      th:placeholder="${field.placeholder}"
+                      th:rows="${field.config?.rows ?: 3}"
+                      th:required="${field.required}"
+                      th:readonly="${field.readonly}"
+                      th:disabled="${field.disabled}"></textarea>
+        </th:block>
+
+        <!-- EMAIL -->
+        <th:block th:if="${field.type.name() == 'EMAIL'}">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="email" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control"
+                       th:placeholder="${field.placeholder ?: 'example@domain.com'}"
+                       th:required="${field.required}"
+                       th:readonly="${field.readonly}"
+                       th:disabled="${field.disabled}">
+            </div>
+        </th:block>
+
+        <!-- PHONE -->
+        <th:block th:if="${field.type.name() == 'PHONE'}">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                <input type="tel" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control"
+                       th:placeholder="${field.placeholder ?: '+1234567890'}"
+                       th:required="${field.required}"
+                       th:readonly="${field.readonly}"
+                       th:disabled="${field.disabled}">
+            </div>
+        </th:block>
+
+        <!-- URL -->
+        <th:block th:if="${field.type.name() == 'URL'}">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                <input type="url" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control"
+                       th:placeholder="${field.placeholder ?: 'https://example.com'}"
+                       th:required="${field.required}"
+                       th:readonly="${field.readonly}"
+                       th:disabled="${field.disabled}">
+            </div>
+        </th:block>
+
+        <!-- PASSWORD -->
+        <th:block th:if="${field.type.name() == 'PASSWORD'}">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                <input type="password" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control"
+                       th:placeholder="${field.placeholder ?: 'Enter password'}"
+                       th:required="${field.required}"
+                       th:readonly="${field.readonly}"
+                       th:disabled="${field.disabled}">
+            </div>
+        </th:block>
+
+        <!-- COLOR -->
+        <th:block th:if="${field.type.name() == 'COLOR'}">
+            <div class="d-flex align-items-center gap-2">
+                <input type="color" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control form-control-color"
+                       th:value="${field.placeholder ?: '#3b82f6'}"
+                       th:required="${field.required}"
+                       th:disabled="${field.disabled}">
+                <span class="text-muted small">Select Color</span>
+            </div>
+        </th:block>
+
+        <!-- IMAGE -->
+        <th:block th:if="${field.type.name() == 'IMAGE'}">
+            <div class="file-upload-wrapper border rounded p-3 text-center bg-light">
+                <input type="file" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control d-none"
+                       accept="image/*"
+                       th:required="${field.required}"
+                       th:disabled="${field.disabled}"
+                       th:onchange="'formRuntime.previewImage(this, \'' + ${field.key} + '\')'">
+                <label th:for="${field.key}" class="btn btn-outline-primary mb-2">
+                    <i class="bi bi-image me-2"></i>
+                    <span>Select Image</span>
+                </label>
+                <div th:id="'image-preview-container-' + ${field.key}" class="d-none mt-2">
+                    <img th:id="'image-preview-' + ${field.key}" src="" class="img-thumbnail" style="max-height: 150px;">
+                </div>
+                <div class="mt-2 text-muted small">
+                    Max size: <span th:text="${field.config?.maxFileSizeMb ?: 5}">5</span>MB | Images only
+                </div>
+            </div>
+        </th:block>
+
+        <!-- SIGNATURE -->
+        <th:block th:if="${field.type.name() == 'SIGNATURE'}">
+            <div class="signature-wrapper border rounded bg-white p-2 text-center" style="max-width: 500px;">
+                <canvas th:id="'signature-canvas-' + ${field.key}" 
+                        class="border rounded bg-light" 
+                        style="width: 100%; height: 150px; cursor: crosshair; touch-action: none;"></canvas>
+                <div class="d-flex justify-content-between mt-2 px-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            th:onclick="'formRuntime.clearSignature(\'' + ${field.key} + '\')'">Clear</button>
+                    <span class="text-muted small align-self-center">Draw your signature above</span>
+                </div>
+                <input type="hidden" th:id="${field.key}" th:name="${field.key}" th:required="${field.required}">
+            </div>
+        </th:block>
+
+        <!-- NUMBER / DECIMAL -->
+        <th:block th:if="${field.type.name() == 'NUMBER' or field.type.name() == 'DECIMAL'}">
+            <input type="number" 
+                   th:id="${field.key}" 
+                   th:name="${field.key}"
+                   class="form-control"
+                   th:step="${field.config?.step ?: (field.type.name() == 'DECIMAL' ? '0.01' : '1')}"
+                   th:min="${field.config?.min}"
+                   th:max="${field.config?.max}"
+                   th:required="${field.required}"
+                   th:readonly="${field.readonly}"
+                   th:disabled="${field.disabled}">
+        </th:block>
+
+        <!-- DATE / DATETIME -->
+        <th:block th:if="${field.type.name() == 'DATE'}">
+            <input type="date" 
+                   th:id="${field.key}" 
+                   th:name="${field.key}"
+                   class="form-control"
+                   th:min="${field.config?.minDate}"
+                   th:max="${field.config?.maxDate}"
+                   th:required="${field.required}"
+                   th:readonly="${field.readonly}"
+                   th:disabled="${field.disabled}">
+        </th:block>
+
+        <th:block th:if="${field.type.name() == 'DATETIME'}">
+            <input type="datetime-local" 
+                   th:id="${field.key}" 
+                   th:name="${field.key}"
+                   class="form-control"
+                   th:min="${field.config?.minDateTime}"
+                   th:max="${field.config?.maxDateTime}"
+                   th:required="${field.required}"
+                   th:readonly="${field.readonly}"
+                   th:disabled="${field.disabled}">
+        </th:block>
+
+        <!-- BOOLEAN / CHECKBOX -->
+        <th:block th:if="${field.type.name() == 'BOOLEAN' or field.type.name() == 'CHECKBOX'}">
+            <div th:class="${field.config?.renderAsSwitch ? 'form-check form-switch' : 'form-check'}">
+                <input class="form-check-input" type="checkbox" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       th:checked="${field.config?.defaultValue}"
+                       th:required="${field.required}"
+                       th:disabled="${field.disabled}">
+                <label class="form-check-label" th:for="${field.key}" 
+                       th:text="${field.config?.checkboxLabel ?: field.label}">Label</label>
+            </div>
+        </th:block>
+
+        <!-- SELECT / MULTISELECT -->
+        <th:block th:if="${field.type.name() == 'SELECT' or field.type.name() == 'MULTISELECT'}">
+            <select th:id="${field.key}" 
+                    th:name="${field.key}"
+                    class="form-select"
+                    th:multiple="${field.type.name() == 'MULTISELECT'}"
+                    th:required="${field.required}"
+                    th:disabled="${field.disabled}">
+                <option th:if="${field.type.name() == 'SELECT'}" value="" th:text="${field.placeholder ?: 'Select option...'}"></option>
+                <option th:each="opt : ${field.config?.options}" 
+                        th:value="${opt.value}" 
+                        th:text="${opt.label}"></option>
+            </select>
+        </th:block>
+
+        <!-- RADIO -->
+        <th:block th:if="${field.type.name() == 'RADIO'}">
+            <div th:each="opt : ${field.config?.options}" 
+                 th:class="${field.config?.layout == 'HORIZONTAL' ? 'form-check form-check-inline' : 'form-check'}">
+                <input class="form-check-input" type="radio" 
+                       th:name="${field.key}" 
+                       th:id="${field.key + '-' + opt.value}" 
+                       th:value="${opt.value}"
+                       th:required="${field.required}"
+                       th:disabled="${field.disabled}">
+                <label class="form-check-label" th:for="${field.key + '-' + opt.value}" th:text="${opt.label}">Option</label>
+            </div>
+        </th:block>
+
+        <!-- USER / ORG / ROLE PICKER -->
+        <th:block th:if="${field.type.name() == 'USER_PICKER' or field.type.name() == 'ORG_PICKER' or field.type.name() == 'ROLE_PICKER'}">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i th:class="${field.type.name() == 'USER_PICKER' ? 'bi bi-person' : (field.type.name() == 'ROLE_PICKER' ? 'bi bi-shield-lock' : 'bi bi-building')}"></i>
+                </span>
+                <input type="text" class="form-control" 
+                       th:placeholder="${field.placeholder ?: 'Search...'}"
+                       th:readonly="true"
+                       th:onclick="'formRuntime.openPicker(\'' + ${field.key} + '\', \'' + ${field.type.name()} + '\')'">
+                <input type="hidden" th:id="${field.key}" th:name="${field.key}">
+            </div>
+        </th:block>
+
+        <!-- RICH TEXT -->
+        <th:block th:if="${field.type.name() == 'RICH_TEXT'}">
+            <div class="rich-text-editor-container" 
+                 th:id="'editor-' + ${field.key}"
+                 th:data-config="${field.config != null ? #json.stringify(field.config) : '{}'}">
+                <textarea th:id="${field.key}" th:name="${field.key}" class="d-none"></textarea>
+                <div class="editor-toolbar border rounded-top bg-light p-1">
+                    <!-- Basic toolbar placeholder -->
+                    <button type="button" class="btn btn-sm btn-light border"><b>B</b></button>
+                    <button type="button" class="btn btn-sm btn-light border"><i>I</i></button>
+                    <button type="button" class="btn btn-sm btn-light border"><u>U</u></button>
+                </div>
+                <div class="editor-content border border-top-0 rounded-bottom p-2" 
+                     contenteditable="true" style="min-height: 150px;"></div>
+            </div>
+        </th:block>
+
+        <!-- FILE -->
+        <th:block th:if="${field.type.name() == 'FILE'}">
+            <div class="file-upload-wrapper border rounded p-3 text-center bg-light">
+                <input type="file" 
+                       th:id="${field.key}" 
+                       th:name="${field.key}"
+                       class="form-control d-none"
+                       th:multiple="${field.config?.maxFiles > 1}"
+                       th:accept="${#strings.listJoin(field.config?.allowedMimeTypes, ',')}">
+                <label th:for="${field.key}" class="btn btn-outline-primary mb-0">
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    <span>Select Files</span>
+                </label>
+                <div class="mt-2 text-muted small">
+                    Max size: <span th:text="${field.config?.maxFileSizeMb}">20</span>MB
+                    <span th:if="${field.config?.allowedExtensions}">
+                        | Allowed: <span th:text="${#strings.listJoin(field.config?.allowedExtensions, ', ')}"></span>
+                    </span>
+                </div>
+            </div>
+        </th:block>
+
+        <!-- TABLE -->
+        <th:block th:if="${field.type.name() == 'TABLE'}">
+            <div class="table-responsive border rounded">
+                <table class="table table-sm table-hover mb-0" th:id="'table-' + ${field.key}">
+                    <thead class="table-light">
+                        <tr>
+                            <th th:each="col : ${field.config?.columns}" th:text="${col.label}">Column</th>
+                            <th th:if="${field.config?.deleteRowEnabled}" style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows will be rendered dynamically by JS or initially empty -->
+                    </tbody>
+                </table>
+                <div th:if="${field.config?.addRowEnabled}" class="p-2 border-top bg-light">
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none" 
+                            th:onclick="'formRuntime.addRow(\'' + ${field.key} + '\')'">
+                        <i class="bi bi-plus-circle me-1"></i> Add Row
+                    </button>
+                </div>
+            </div>
+        </th:block>
+    </div>
+
+    <div class="form-text text-muted small mt-1" th:if="${field.helpText}" th:text="${field.helpText}"></div>
+    <div class="invalid-feedback" th:id="'error-' + ${field.key}"></div>
+</div>
+
+</body>
+</html>

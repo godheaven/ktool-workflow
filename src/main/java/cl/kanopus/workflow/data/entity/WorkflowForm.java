@@ -27,6 +27,10 @@ public class WorkflowForm {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String layoutJson;
+
+    @Builder.Default
     @OneToMany(mappedBy = "form", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     private List<WorkflowFormField> fields = new ArrayList<>();

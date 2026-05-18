@@ -1,4 +1,4 @@
-package cl.kanopus.workflow.model.enums;
+package cl.kanopus.workflow.model.form;
 
 public enum FieldType {
     TEXT,

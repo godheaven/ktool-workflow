@@ -32,6 +32,8 @@ public class WorkflowTask {
     @JoinColumn(name = "role_id")
     private Role role;
 
+    @Builder.Default
     private String status = "PENDING"; // PENDING, COMPLETED
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 }

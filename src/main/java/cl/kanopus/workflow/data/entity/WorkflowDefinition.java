@@ -23,16 +23,25 @@ public class WorkflowDefinition {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Builder.Default
     private boolean active = true;
 
+    @Builder.Default
     private String complexity = "Low";
+    @Builder.Default
     private int rating = 3;
+    @Builder.Default
     private String ownerName = "Ioni owcher";
+    @Builder.Default
     private String ownerAvatarUrl = "https://ui-avatars.com/api/?name=Ioni+Owcher&background=random";
+    @Builder.Default
     private String lastUpdated = "09/13/2015";
+    @Builder.Default
     private String versionLabel = "v 1.0";
+    @Builder.Default
     private boolean enabled = true;
 
+    @Builder.Default
     @OneToMany(mappedBy = "definition", cascade = CascadeType.ALL)
     private List<WorkflowVersion> versions = new ArrayList<>();
 }

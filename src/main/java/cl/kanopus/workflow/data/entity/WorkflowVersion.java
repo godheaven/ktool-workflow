@@ -24,11 +24,14 @@ public class WorkflowVersion {
 
     private int versionNumber;
     private boolean active;
+    @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Builder.Default
     @OneToMany(mappedBy = "version", cascade = CascadeType.ALL)
     private List<WorkflowState> states = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "version", cascade = CascadeType.ALL)
     private List<WorkflowTransition> transitions = new ArrayList<>();
 

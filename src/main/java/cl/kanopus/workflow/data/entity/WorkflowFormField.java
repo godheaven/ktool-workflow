@@ -1,5 +1,6 @@
 package cl.kanopus.workflow.data.entity;
 
+import cl.kanopus.workflow.model.form.FieldType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,18 +20,41 @@ public class WorkflowFormField {
     @JoinColumn(name = "form_id", nullable = false)
     private WorkflowForm form;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "field_key", nullable = false)
+    private String key; // semantic key (e.g., incidentType)
 
     @Column(nullable = false)
     private String label;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String fieldType; // TEXT, NUMBER, DATE, SELECT, etc.
-
-    private boolean required;
-    private int orderIndex;
+    private FieldType fieldType;
 
     @Column(columnDefinition = "TEXT")
-    private String options;
+    private String description;
+
+    private String helpText;
+    private String placeholder;
+
+    private boolean required;
+    private boolean readonly;
+    private boolean hidden;
+    private boolean disabled;
+    private boolean searchable;
+    private boolean auditable;
+    private boolean sensitive;
+
+    private int orderIndex;
+    private String sectionKey;
+    private String cssClass;
+    private String icon;
+
+    @Column(columnDefinition = "TEXT")
+    private String configJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String rulesJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String layoutJson;
 }
